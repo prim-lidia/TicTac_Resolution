@@ -18,13 +18,18 @@ public class MainActivity extends AppCompatActivity {
             this.symbol = symbol;
         }
     }
+    enum StateOfGame {
+        Playing, Draw, Winner;
+    }
     public static final int NUM_ROWS_COLUMNS = 3;
 
     private Player player1;
     private Player player2;
     private Player currentPlayer;
     private Button [][] buttons;
-
+    private Boolean gameOver;
+    private StateOfGame stateOfGame;
+    private int numberOfMoves;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +38,11 @@ public class MainActivity extends AppCompatActivity {
 
         player1 = new Player("1", "X");
         player2 = new Player("2", "O");
+
+        gameOver = false;
         currentPlayer = player1;
+        stateOfGame = StateOfGame.Playing;
+        numberOfMoves = 0;
 
         GridLayout gridLayout = findViewById(R.id.gridLayout);
         gridLayout.setRowCount(NUM_ROWS_COLUMNS);
@@ -60,15 +69,116 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Button button = (Button) v;
+                if (!(stateOfGame == StateOfGame.Playing)) {return;}
 
                 if ( button.getText().equals("")) {
                     button.setText(currentPlayer.symbol);
-                    changePlayer();
-                    displayTurn();
+                    numberOfMoves++;
+                    stateOfGame = checkWinner();
+                    if (stateOfGame != StateOfGame.Playing){
+                        displayEndOfGame();
+                    } else {
+                        changePlayer();
+                        displayTurn();
+                    }
                 }
             }
         });
     }
+
+    private void displayEndOfGame() {
+        TextView textView = findViewById(R.id.textTurn);
+
+        if(stateOfGame == StateOfGame.Draw ) {
+            textView.setText("DRAW");
+        }else {
+            if (stateOfGame == StateOfGame.Winner) {
+                textView.setText("Winner: "+currentPlayer.name+ " (" + currentPlayer.symbol+")");
+            }
+        }
+
+    }
+
+    private StateOfGame checkWinner() {
+        boolean winner = checkRowsWinner();
+        if(!winner) {
+            winner = checkColsWinner();
+        }
+        if(!winner) {
+            winner = checkDiagonalLeftToRight();
+        }
+        if(!winner) {
+            winner = checkDiagonalRightToLeft();
+        }
+        if(!winner) {
+            if(numberOfMoves == 9){
+                return StateOfGame.Draw;
+            }
+        }
+        if (winner) {
+            return StateOfGame.Winner;
+        }
+        return StateOfGame.Playing;
+    }
+
+    private boolean checkDiagonalRightToLeft() {
+        int countSymbols = 0;
+        for (int i = 0; i<NUM_ROWS_COLUMNS; i++){
+            if(buttons[i][NUM_ROWS_COLUMNS-i-1].getText().equals(currentPlayer.symbol)){
+                countSymbols++;
+            }
+        }
+        if( countSymbols==NUM_ROWS_COLUMNS ){
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkDiagonalLeftToRight() {
+        int countSymbols = 0;
+        for (int i = 0; i<NUM_ROWS_COLUMNS; i++){
+            if(buttons[i][i].getText().equals(currentPlayer.symbol)){
+                countSymbols++;
+            }
+        }
+        if( countSymbols==NUM_ROWS_COLUMNS ){
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkColsWinner() {
+        int countSymbols;
+        for (int col=0; col<NUM_ROWS_COLUMNS; col++){
+            countSymbols = 0;
+            for (int row = 0; row<NUM_ROWS_COLUMNS; row++){
+                if(buttons[row][col].getText().equals(currentPlayer.symbol)){
+                    countSymbols++;
+                }
+            }
+            if( countSymbols==NUM_ROWS_COLUMNS ){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean checkRowsWinner() {
+        int countSymbols;
+        for (int row = 0; row<NUM_ROWS_COLUMNS; row++){
+            countSymbols = 0;
+            for (int col=0; col<NUM_ROWS_COLUMNS; col++){
+                if(buttons[row][col].getText().equals(currentPlayer.symbol)){
+                    countSymbols++;
+                }
+            }
+            if( countSymbols==NUM_ROWS_COLUMNS ){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private void changePlayer() {
         if (currentPlayer == player1){
